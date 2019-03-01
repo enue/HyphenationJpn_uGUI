@@ -176,16 +176,16 @@ public class HyphenationJpn : UIBehaviour
 
 	private static bool CHECK_HYP_FRONT(char str)
 	{
-		return Array.Exists<char>(HYP_FRONT, item => item == str);
+		return Array.IndexOf(HYP_FRONT, str) >= 0;
 	}
 
 	private static bool CHECK_HYP_BACK(char str)
 	{
-		return Array.Exists<char>(HYP_BACK, item => item == str);
+		return Array.IndexOf(HYP_BACK, str) >= 0;
 	}
 
 	private static bool IsLatin(char s)
 	{
-		return Array.Exists<char>(HYP_LATIN, item => item == s);
+		return Array.IndexOf(HYP_LATIN, s) >= 0;
 	}
 }
