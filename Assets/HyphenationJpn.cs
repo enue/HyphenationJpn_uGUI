@@ -105,9 +105,8 @@ public class HyphenationJpn : UIBehaviour
 		return lineBuilder.ToString();
 	}
 
-	private List<string> GetWordList(string tmpText)
+	private IEnumerable<string> GetWordList(string tmpText)
 	{
-		List<string> words = new List<string>();
 		StringBuilder line = new StringBuilder();
 		char emptyChar = new char();
 
@@ -123,12 +122,11 @@ public class HyphenationJpn : UIBehaviour
 			    (!IsLatin(currentCharacter) && CHECK_HYP_BACK(preCharacter)) ||
 			    (!IsLatin(nextCharacter) && !CHECK_HYP_FRONT(nextCharacter) && !CHECK_HYP_BACK(currentCharacter))||
 			    (characterCount == tmpText.Length - 1)){
-				words.Add(line.ToString());
+				yield return line.ToString();
 				line.Length = 0;
 				continue;
 			}
 		}
-		return words;
 	}
 
 	// helper
