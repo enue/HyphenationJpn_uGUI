@@ -36,13 +36,22 @@ namespace HyphenationJpns
 			{
 				message = RITCH_TEXT_REPLACE.Replace(message, string.Empty);
 			}
-			float totalWidth = 0f;
+			float lineWidth = 0f;
+			float maxWidth = 0f;
 			foreach (var character in message)
 			{
-				font.GetCharacterInfo(character, out CharacterInfo info, fontSize, fontStyle);
-				totalWidth += info.advance;
+				if (character == '\r' || character == '\n')
+				{
+					maxWidth = Mathf.Max(lineWidth, maxWidth);
+					lineWidth = 0f;
+				}
+				else
+				{
+					font.GetCharacterInfo(character, out CharacterInfo info, fontSize, fontStyle);
+					lineWidth += info.advance;
+				}
 			}
-			return totalWidth;
+			return Mathf.Max(maxWidth, lineWidth);
 		}
 
 		static float GetCharacterWidth(Font font, int fontSize, FontStyle fontStyle, char character)
