@@ -146,36 +146,36 @@ namespace HyphenationJpns
 
 		// 禁則処理 http://ja.wikipedia.org/wiki/%E7%A6%81%E5%89%87%E5%87%A6%E7%90%86
 		// 行頭禁則文字
-		private readonly static char[] HYP_FRONT =
+		private const string HYP_FRONT =
 			(",)]｝、。）〕〉》」』】〙〗〟’”｠»" +// 終わり括弧類 簡易版
 			 "ァィゥェォッャュョヮヵヶっぁぃぅぇぉっゃゅょゎ" +//行頭禁則和字 
 			 "‐゠–〜ー" +//ハイフン類
 			 "?!！？‼⁇⁈⁉" +//区切り約物
 			 "・:;" +//中点類
-			 "。.").ToCharArray();//句点類
+			 "。.");//句点類
 
-		private readonly static char[] HYP_BACK =
-			 "(（[｛〔〈《「『【〘〖〝‘“｟«".ToCharArray();//始め括弧類
+		private const string HYP_BACK =
+			 "(（[｛〔〈《「『【〘〖〝‘“｟«";//始め括弧類
 
-		private readonly static char[] HYP_LATIN =
+		private const string HYP_LATIN =
 			("abcdefghijklmnopqrstuvwxyz" +
 			 "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
 			 "0123456789" +
-			 "<>=/().,").ToCharArray();
+			 "<>=/().,");
 
 		private static bool CHECK_HYP_FRONT(char str)
 		{
-			return Array.IndexOf(HYP_FRONT, str) >= 0;
+			return HYP_FRONT.IndexOf(str) >= 0;
 		}
 
 		private static bool CHECK_HYP_BACK(char str)
 		{
-			return Array.IndexOf(HYP_BACK, str) >= 0;
+			return HYP_BACK.IndexOf(str) >= 0;
 		}
 
 		private static bool IsLatin(char s)
 		{
-			return Array.IndexOf(HYP_LATIN, s) >= 0;
+			return HYP_LATIN.IndexOf(s) >= 0;
 		}
 	}
 }
