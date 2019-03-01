@@ -11,6 +11,26 @@ using System;
 [ExecuteInEditMode]
 public class HyphenationJpn : UIBehaviour
 {
+	struct Word
+	{
+		public string Text { get; }
+		public char Character { get; }
+
+		public Word(string text, char character)
+		{
+			Text = text;
+			Character = character;
+		}
+
+		public bool IsNewLine
+		{
+			get
+			{
+				return Character == '\n' || Character == '\r';
+			}
+		}
+	}
+
 	// http://answers.unity3d.com/questions/424874/showing-a-textarea-field-for-a-string-variable-in.html
 	[TextArea(3,10), SerializeField]
 	private string text;
@@ -70,6 +90,12 @@ public class HyphenationJpn : UIBehaviour
 		return totalWidth;
 	}
 
+	float GetCharacterWidth(Text textComp, char character)
+	{
+		textComp.font.GetCharacterInfo(character, out CharacterInfo info, textComp.fontSize, textComp.fontStyle);
+		return info.advance;
+	}
+
 	string GetFormatedText(Text textComp, string msg)
 	{
 		if(string.IsNullOrEmpty(msg)){
@@ -89,23 +115,38 @@ public class HyphenationJpn : UIBehaviour
 		float lineWidth = 0;
 		foreach( var originalLine in GetWordList(msg))
 		{
-			if( originalLine == "\n" || originalLine == "\r" ){
+			if( originalLine.IsNewLine ){
 				lineWidth = 0;
 			}else{
-				float textWidth = GetTextWidth(textComp, originalLine);
+				float textWidth;
+				if (originalLine.Text == null)
+				{
+					textWidth = GetCharacterWidth(textComp, originalLine.Character);
+				}
+				else
+				{
+					 textWidth = GetTextWidth(textComp, originalLine.Text);
+				}
 				lineWidth += textWidth;
 				if ( lineWidth > rectWidth ){
 					lineBuilder.Append( Environment.NewLine );
 					lineWidth = textWidth;
 				}
 			}
-			lineBuilder.Append( originalLine );
+			if (originalLine.Text == null)
+			{
+				lineBuilder.Append(originalLine.Character);
+			}
+			else
+			{
+				lineBuilder.Append(originalLine.Text);
+			}
 		}
 
 		return lineBuilder.ToString();
 	}
 
-	private IEnumerable<string> GetWordList(string tmpText)
+	private IEnumerable<Word> GetWordList(string tmpText)
 	{
 		StringBuilder line = new StringBuilder();
 		char emptyChar = new char();
@@ -122,7 +163,14 @@ public class HyphenationJpn : UIBehaviour
 			    (!IsLatin(currentCharacter) && CHECK_HYP_BACK(preCharacter)) ||
 			    (!IsLatin(nextCharacter) && !CHECK_HYP_FRONT(nextCharacter) && !CHECK_HYP_BACK(currentCharacter))||
 			    (characterCount == tmpText.Length - 1)){
-				yield return line.ToString();
+				if (line.Length == 1)
+				{
+					yield return new Word(null, currentCharacter);
+				}
+				else
+				{
+					yield return new Word(line.ToString(), default);
+				}
 				line.Length = 0;
 				continue;
 			}
