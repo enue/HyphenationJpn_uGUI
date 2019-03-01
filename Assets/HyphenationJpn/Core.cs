@@ -34,7 +34,7 @@ namespace HyphenationJpns
 		{
 			if (supportRichText)
 			{
-				message = Regex.Replace(message, RITCH_TEXT_REPLACE, string.Empty);
+				message = RITCH_TEXT_REPLACE.Replace(message, string.Empty);
 			}
 			float totalWidth = 0f;
 			foreach (var character in message)
@@ -138,11 +138,11 @@ namespace HyphenationJpns
 			}
 		}
 		// static
-		private const string RITCH_TEXT_REPLACE =
+		private static readonly Regex RITCH_TEXT_REPLACE = new Regex(
 			"(\\<color=.*\\>|</color>|" +
 			"\\<size=.n\\>|</size>|" +
 			"<b>|</b>|" +
-			"<i>|</i>)";
+			"<i>|</i>)");
 
 		// 禁則処理 http://ja.wikipedia.org/wiki/%E7%A6%81%E5%89%87%E5%87%A6%E7%90%86
 		// 行頭禁則文字
