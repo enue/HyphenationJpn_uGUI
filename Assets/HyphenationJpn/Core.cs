@@ -34,6 +34,9 @@ namespace HyphenationJpns
 		{
 			if (supportRichText)
 			{
+				// FIXME : colorタグでlatin文字を囲んでいる場合正常に処理できない。
+				// たとえば "<color=red>Hoge</color>"は"Hoge"になることを期待するが、空文字列になってしまう。
+				// 日本語を囲んでいる場合、"<color=red>ほげ</color>"は { "<color=red>", "ほ", "げ</color>" }のように分割して処理されるので問題にならない。
 				message = RITCH_TEXT_REPLACE.Replace(message, string.Empty);
 			}
 			float totalWidth = 0f;
