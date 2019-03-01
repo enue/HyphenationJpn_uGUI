@@ -93,7 +93,7 @@ public class HyphenationJpn : UIBehaviour
 		{
 			lineWidth += GetTextWidth(textComp, originalLine);
 
-			if( originalLine == Environment.NewLine ){
+			if( originalLine == "\n" || originalLine == "\r" ){
 				lineWidth = 0;
 			}else{
 				if( originalLine == " " ){
