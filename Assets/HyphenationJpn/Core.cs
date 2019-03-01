@@ -138,7 +138,7 @@ namespace HyphenationJpns
 			}
 		}
 		// static
-		private readonly static string RITCH_TEXT_REPLACE =
+		private const string RITCH_TEXT_REPLACE =
 			"(\\<color=.*\\>|</color>|" +
 			"\\<size=.n\\>|</size>|" +
 			"<b>|</b>|" +
