@@ -57,20 +57,17 @@ public class HyphenationJpn : UIBehaviour
 		UpdateText(text);
 	}
 
-	float GetSpaceWidth(Text textComp)
-	{
-		float tmp0 = GetTextWidth(textComp, "m m");
-		float tmp1 = GetTextWidth(textComp, "mm");
-		return (tmp0 - tmp1);
-	}
-
 	float GetTextWidth(Text textComp, string message)
 	{
 		if( _text.supportRichText ){
 			message = Regex.Replace(message, RITCH_TEXT_REPLACE, string.Empty);
 		}
-		textComp.text = message;
-		return textComp.preferredWidth;
+		float totalWidth = 0f;
+		foreach( var character in message){
+			textComp.font.GetCharacterInfo(character, out CharacterInfo info, textComp.fontSize, textComp.fontStyle);
+			totalWidth += info.advance;
+		}
+		return totalWidth;
 	}
 
 	string GetFormatedText(Text textComp, string msg)
@@ -80,7 +77,8 @@ public class HyphenationJpn : UIBehaviour
 		}
 		
 		float rectWidth = _RectTransform.rect.width;
-		float spaceCharacterWidth = GetSpaceWidth(textComp);
+
+		textComp.font.RequestCharactersInTexture(msg, textComp.fontSize, textComp.fontStyle);
 
 		// override
 		textComp.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -91,18 +89,14 @@ public class HyphenationJpn : UIBehaviour
 		float lineWidth = 0;
 		foreach( var originalLine in GetWordList(msg))
 		{
-			lineWidth += GetTextWidth(textComp, originalLine);
-
 			if( originalLine == "\n" || originalLine == "\r" ){
 				lineWidth = 0;
 			}else{
-				if( originalLine == " " ){
-					lineWidth += spaceCharacterWidth;
-				}
-
-				if( lineWidth > rectWidth ){
+				float textWidth = GetTextWidth(textComp, originalLine);
+				lineWidth += textWidth;
+				if ( lineWidth > rectWidth ){
 					lineBuilder.Append( Environment.NewLine );
-					lineWidth = GetTextWidth(textComp, originalLine);
+					lineWidth = textWidth;
 				}
 			}
 			lineBuilder.Append( originalLine );
