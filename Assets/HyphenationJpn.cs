@@ -130,7 +130,7 @@ public class HyphenationJpn : UIBehaviour
 			    (!IsLatin(nextCharacter) && !CHECK_HYP_FRONT(nextCharacter) && !CHECK_HYP_BACK(currentCharacter))||
 			    (characterCount == tmpText.Length - 1)){
 				words.Add(line.ToString());
-				line = new StringBuilder();
+				line.Length = 0;
 				continue;
 			}
 		}
