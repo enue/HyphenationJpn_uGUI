@@ -67,8 +67,12 @@ public class HyphenationJpn : UIBehaviour
 
 	void UpdateText(string str)
 	{
+		// override
+		_Text.horizontalOverflow = HorizontalWrapMode.Overflow;
+
 		// update Text
-		_Text.text = GetFormatedText(_Text, str);
+		float rectWidth = _RectTransform.rect.width;
+		_Text.text = GetFormatedText(rectWidth, _Text, str);
 	}
 	
 	public void GetText(string str)
@@ -77,37 +81,37 @@ public class HyphenationJpn : UIBehaviour
 		UpdateText(text);
 	}
 
-	float GetTextWidth(Text textComp, string message)
+	static float GetTextWidth(Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
 	{
-		if( _text.supportRichText ){
+		if( supportRichText ){
 			message = Regex.Replace(message, RITCH_TEXT_REPLACE, string.Empty);
 		}
 		float totalWidth = 0f;
 		foreach( var character in message){
-			textComp.font.GetCharacterInfo(character, out CharacterInfo info, textComp.fontSize, textComp.fontStyle);
+			font.GetCharacterInfo(character, out CharacterInfo info, fontSize, fontStyle);
 			totalWidth += info.advance;
 		}
 		return totalWidth;
 	}
 
-	float GetCharacterWidth(Text textComp, char character)
+	static float GetCharacterWidth(Font font, int fontSize, FontStyle fontStyle, char character)
 	{
-		textComp.font.GetCharacterInfo(character, out CharacterInfo info, textComp.fontSize, textComp.fontStyle);
+		font.GetCharacterInfo(character, out CharacterInfo info, fontSize, fontStyle);
 		return info.advance;
 	}
 
-	string GetFormatedText(Text textComp, string msg)
+	static string GetFormatedText(float rectWidth, Text text, string msg)
+	{
+		return GetFormatedText(rectWidth, text.font, text.fontSize, text.fontStyle, msg, text.supportRichText);
+	}
+
+	static string GetFormatedText(float rectWidth, Font font, int fontSize, FontStyle fontStyle, string msg, bool supportRichText)
 	{
 		if(string.IsNullOrEmpty(msg)){
 			return string.Empty;
 		}
 		
-		float rectWidth = _RectTransform.rect.width;
-
-		textComp.font.RequestCharactersInTexture(msg, textComp.fontSize, textComp.fontStyle);
-
-		// override
-		textComp.horizontalOverflow = HorizontalWrapMode.Overflow;
+		font.RequestCharactersInTexture(msg, fontSize, fontStyle);
 
 		// work
 		StringBuilder lineBuilder = new StringBuilder();
@@ -121,11 +125,11 @@ public class HyphenationJpn : UIBehaviour
 				float textWidth;
 				if (originalLine.Text == null)
 				{
-					textWidth = GetCharacterWidth(textComp, originalLine.Character);
+					textWidth = GetCharacterWidth(font, fontSize, fontStyle, originalLine.Character);
 				}
 				else
 				{
-					 textWidth = GetTextWidth(textComp, originalLine.Text);
+					 textWidth = GetTextWidth(font, fontSize, fontStyle, originalLine.Text, supportRichText);
 				}
 				lineWidth += textWidth;
 				if ( lineWidth > rectWidth ){
@@ -146,7 +150,7 @@ public class HyphenationJpn : UIBehaviour
 		return lineBuilder.ToString();
 	}
 
-	private IEnumerable<Word> GetWordList(string tmpText)
+	static private IEnumerable<Word> GetWordList(string tmpText)
 	{
 		StringBuilder line = new StringBuilder();
 		char emptyChar = new char();
