@@ -56,19 +56,17 @@ namespace HyphenationJpns
 			}
 		}
 
-		static float GetTextWidth(Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
+		static float GetLastLineWidth(Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
 		{
 			if (supportRichText)
 			{
 				message = RITCH_TEXT_REPLACE.Replace(message, string.Empty);
 			}
 			float lineWidth = 0f;
-			float maxWidth = 0f;
 			foreach (var character in message)
 			{
 				if (character == '\r' || character == '\n')
 				{
-					maxWidth = Mathf.Max(lineWidth, maxWidth);
 					lineWidth = 0f;
 				}
 				else
@@ -78,7 +76,7 @@ namespace HyphenationJpns
 					lineWidth += info.advance;
 				}
 			}
-			return Mathf.Max(maxWidth, lineWidth);
+			return lineWidth;
 		}
 
 		static float GetCharacterWidth(Font font, int fontSize, FontStyle fontStyle, char character)
@@ -120,7 +118,7 @@ namespace HyphenationJpns
 					}
 					else
 					{
-						textWidth = GetTextWidth(font, fontSize, fontStyle, originalLine.Text, supportRichText);
+						textWidth = GetLastLineWidth(font, fontSize, fontStyle, originalLine.Text, supportRichText);
 					}
 					lineWidth += textWidth;
 					if (lineWidth > rectWidth)
