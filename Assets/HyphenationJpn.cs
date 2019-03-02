@@ -39,7 +39,7 @@ public class HyphenationJpn : UIBehaviour
 		_Text.horizontalOverflow = HorizontalWrapMode.Overflow;
 
 		// update Text
-		_Text.text = HyphenationJpns.Core.GetFormatedText(_Text, str);
+		_Text.text = HyphenationJpns.Core.GetFormattedText(_Text, str);
 	}
 	
 	public void SetText(string str)

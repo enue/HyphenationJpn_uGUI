@@ -71,9 +71,7 @@ namespace HyphenationJpns
 				}
 				else
 				{
-					var foundInfo = font.GetCharacterInfo(character, out CharacterInfo info, fontSize, fontStyle);
-					UnityEngine.Assertions.Assert.IsTrue(foundInfo, "not found character info : " + character);
-					lineWidth += info.advance;
+					lineWidth += GetCharacterWidth(font, fontSize, fontStyle, character);
 				}
 			}
 			return lineWidth;
@@ -81,51 +79,52 @@ namespace HyphenationJpns
 
 		static float GetCharacterWidth(Font font, int fontSize, FontStyle fontStyle, char character)
 		{
-			font.GetCharacterInfo(character, out CharacterInfo info, fontSize, fontStyle);
+			var foundInfo = font.GetCharacterInfo(character, out var info, fontSize, fontStyle);
+			UnityEngine.Assertions.Assert.IsTrue(foundInfo, "not found character info : " + character);
 			return info.advance;
 		}
 
-		public static string GetFormatedText(Text text, string msg)
+		public static string GetFormattedText(Text text, string message)
 		{
-			return GetFormatedText(text.rectTransform.rect.width, text.font, text.fontSize, text.fontStyle, msg, text.supportRichText);
+			return GetFormattedText(text.rectTransform.rect.width, text.font, text.fontSize, text.fontStyle, message, text.supportRichText);
 		}
 
-		public static string GetFormatedText(float rectWidth, Font font, int fontSize, FontStyle fontStyle, string msg, bool supportRichText)
+		public static string GetFormattedText(float rectWidth, Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
 		{
-			if (string.IsNullOrEmpty(msg))
+			if (string.IsNullOrEmpty(message))
 			{
 				return string.Empty;
 			}
 
-			font.RequestCharactersInTexture(msg, fontSize, fontStyle);
+			font.RequestCharactersInTexture(message, fontSize, fontStyle);
 
 			// work
 			StringBuilder lineBuilder = new StringBuilder();
 
 			float lineWidth = 0f;
-			foreach (var originalLine in GetWordList(msg))
+			foreach (var word in GetWordList(message))
 			{
-				if (originalLine.EndsWithNewLine)
+				if (word.EndsWithNewLine)
 				{
 					lineWidth = 0f;
 				}
 				else
 				{
 					float textWidth;
-					if (originalLine.Text == null)
+					if (word.Text == null)
 					{
-						textWidth = GetCharacterWidth(font, fontSize, fontStyle, originalLine.Character);
+						textWidth = GetCharacterWidth(font, fontSize, fontStyle, word.Character);
 					}
 					else
 					{
-						textWidth = GetLastLineWidth(font, fontSize, fontStyle, originalLine.Text, supportRichText);
+						textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.Text, supportRichText);
 					}
 					lineWidth += textWidth;
 					if (lineWidth > rectWidth)
 					{
 						if (lineWidth != textWidth)
 						{
-							if (!originalLine.StartsWithNewLine)
+							if (!word.StartsWithNewLine)
 							{
 								lineBuilder.Append(Environment.NewLine);
 							}
@@ -133,13 +132,13 @@ namespace HyphenationJpns
 						}
 					}
 				}
-				if (originalLine.Text == null)
+				if (word.Text == null)
 				{
-					lineBuilder.Append(originalLine.Character);
+					lineBuilder.Append(word.Character);
 				}
 				else
 				{
-					lineBuilder.Append(originalLine.Text);
+					lineBuilder.Append(word.Text);
 				}
 			}
 
