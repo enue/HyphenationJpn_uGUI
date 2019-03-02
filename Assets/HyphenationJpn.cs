@@ -12,15 +12,6 @@ public class HyphenationJpn : UIBehaviour
 	[TextArea(3,10), SerializeField]
 	private string text;
 
-	private RectTransform _RectTransform{
-		get{
-			if( _rectTransform == null )
-				_rectTransform = GetComponent<RectTransform>();
-			return _rectTransform;
-		}
-	}
-	private RectTransform _rectTransform;
-
 	private Text _Text{
 		get{
 			if( _text == null )
@@ -48,8 +39,7 @@ public class HyphenationJpn : UIBehaviour
 		_Text.horizontalOverflow = HorizontalWrapMode.Overflow;
 
 		// update Text
-		float rectWidth = _RectTransform.rect.width;
-		_Text.text = HyphenationJpns.Core.GetFormatedText(rectWidth, _Text, str);
+		_Text.text = HyphenationJpns.Core.GetFormatedText(_Text, str);
 	}
 	
 	public void SetText(string str)
@@ -62,10 +52,10 @@ public class HyphenationJpn : UIBehaviour
 	// helper
 	public float textWidth{
 		set{
-			_RectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, value);
+			_Text.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, value);
 		}
 		get{
-			return _RectTransform.rect.width;
+			return _Text.rectTransform.rect.width;
 		}
 	}
 	public int fontSize

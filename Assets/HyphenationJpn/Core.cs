@@ -60,9 +60,9 @@ namespace HyphenationJpns
 			return info.advance;
 		}
 
-		public static string GetFormatedText(float rectWidth, Text text, string msg)
+		public static string GetFormatedText(Text text, string msg)
 		{
-			return GetFormatedText(rectWidth, text.font, text.fontSize, text.fontStyle, msg, text.supportRichText);
+			return GetFormatedText(text.rectTransform.rect.width, text.font, text.fontSize, text.fontStyle, msg, text.supportRichText);
 		}
 
 		public static string GetFormatedText(float rectWidth, Font font, int fontSize, FontStyle fontStyle, string msg, bool supportRichText)
