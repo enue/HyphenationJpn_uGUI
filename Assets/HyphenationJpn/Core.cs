@@ -47,7 +47,8 @@ namespace HyphenationJpns
 				}
 				else
 				{
-					font.GetCharacterInfo(character, out CharacterInfo info, fontSize, fontStyle);
+					var foundInfo = font.GetCharacterInfo(character, out CharacterInfo info, fontSize, fontStyle);
+					UnityEngine.Assertions.Assert.IsTrue(foundInfo, "not found character info : " + character);
 					lineWidth += info.advance;
 				}
 			}
