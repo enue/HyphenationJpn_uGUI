@@ -21,11 +21,37 @@ namespace HyphenationJpns
 				Character = character;
 			}
 
-			public bool IsNewLine
+			public bool StartsWithNewLine
 			{
 				get
 				{
-					return Character == '\n' || Character == '\r';
+					if (Text == null)
+					{
+						return Character == '\n' || Character == '\r';
+					}
+					if (Text.Length == 0)
+					{
+						return false;
+					}
+					var start = Text[0];
+					return start == '\n' || start == '\r';
+				}
+			}
+
+			public bool EndsWithNewLine
+			{
+				get
+				{
+					if (Text == null)
+					{
+						return Character == '\n' || Character == '\r';
+					}
+					if (Text.Length == 0)
+					{
+						return false;
+					}
+					var end = Text[Text.Length - 1];
+					return end == '\n' || end == '\r';
 				}
 			}
 		}
@@ -78,12 +104,12 @@ namespace HyphenationJpns
 			// work
 			StringBuilder lineBuilder = new StringBuilder();
 
-			float lineWidth = 0;
+			float lineWidth = 0f;
 			foreach (var originalLine in GetWordList(msg))
 			{
-				if (originalLine.IsNewLine)
+				if (originalLine.EndsWithNewLine)
 				{
-					lineWidth = 0;
+					lineWidth = 0f;
 				}
 				else
 				{
@@ -99,8 +125,14 @@ namespace HyphenationJpns
 					lineWidth += textWidth;
 					if (lineWidth > rectWidth)
 					{
-						lineBuilder.Append(Environment.NewLine);
-						lineWidth = textWidth;
+						if (lineWidth != textWidth)
+						{
+							if (!originalLine.StartsWithNewLine)
+							{
+								lineBuilder.Append(Environment.NewLine);
+							}
+							lineWidth = textWidth;
+						}
 					}
 				}
 				if (originalLine.Text == null)
