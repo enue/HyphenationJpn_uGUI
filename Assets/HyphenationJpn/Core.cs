@@ -171,7 +171,7 @@ namespace HyphenationJpns
 			("abcdefghijklmnopqrstuvwxyz" +
 			 "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
 			 "0123456789" +
-			 "<>=/().,");
+			 "<>=/().,#");
 
 		private static bool CHECK_HYP_FRONT(char str)
 		{
