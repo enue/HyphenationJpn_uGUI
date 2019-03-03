@@ -108,37 +108,89 @@ namespace HyphenationJpns
 				{
 					lineWidth = 0f;
 				}
-				else
+				else if (word.Text == null)
 				{
-					float textWidth;
-					if (word.Text == null)
+					float textWidth = GetCharacterWidth(font, fontSize, fontStyle, word.Character);
+					if (lineWidth + textWidth > rectWidth)
 					{
-						textWidth = GetCharacterWidth(font, fontSize, fontStyle, word.Character);
-					}
-					else
-					{
-						textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.Text, supportRichText);
+						if (lineWidth != 0f)
+						{
+							lineBuilder.Append(Environment.NewLine);
+							lineWidth = 0f;
+						}
 					}
 					lineWidth += textWidth;
-					if (lineWidth > rectWidth)
+					lineBuilder.Append(word.Character);
+				}
+				else if (supportRichText)
+				{
+					float textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.Text, supportRichText);
+					if (lineWidth + textWidth > rectWidth)
 					{
-						if (lineWidth != textWidth)
+						if (lineWidth != 0f)
 						{
 							if (!word.StartsWithNewLine)
 							{
 								lineBuilder.Append(Environment.NewLine);
+								lineWidth = 0f;
 							}
-							lineWidth = textWidth;
 						}
 					}
-				}
-				if (word.Text == null)
-				{
-					lineBuilder.Append(word.Character);
+					lineWidth += textWidth;
+					lineBuilder.Append(word.Text);
 				}
 				else
 				{
-					lineBuilder.Append(word.Text);
+					var processingIndex = 0;
+					var enableForceNewLine = false;
+					for(int i=0; i<word.Text.Length; ++i)
+					{
+						var character = word.Text[i];
+						if (character == '\n' || character == '\r')
+						{
+							for (int j = processingIndex; j <= i; ++j)
+							{
+								lineBuilder.Append(word.Text[j]);
+							}
+							processingIndex = i+1;
+							lineWidth = 0f;
+						}
+						else
+						{
+							var characterWidth = GetCharacterWidth(font, fontSize, fontStyle, character);
+							if (lineWidth == 0f)
+							{
+								lineWidth = characterWidth;
+							}
+							else if (lineWidth + characterWidth > rectWidth)
+							{
+								lineBuilder.Append(Environment.NewLine);
+								lineWidth = 0f;
+								for (int j = processingIndex; j <= i; ++j)
+								{
+									lineBuilder.Append(word.Text[j]);
+									lineWidth += GetCharacterWidth(font, fontSize, fontStyle, word.Text[j]);
+								}
+								processingIndex = i + 1;
+								enableForceNewLine = true;
+							}
+							else if (enableForceNewLine)
+							{
+								lineBuilder.Append(character);
+								lineWidth += characterWidth;
+								processingIndex = i + 1;
+							}
+							else
+							{
+								lineWidth += characterWidth;
+							}
+						}
+					}
+					for (int i = processingIndex; i < word.Text.Length; ++i)
+					{
+						lineBuilder.Append(word.Text[i]);
+					}
+
 				}
 			}
 
