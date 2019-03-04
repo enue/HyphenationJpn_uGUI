@@ -107,6 +107,14 @@ namespace HyphenationJpns
 				if (word.EndsWithNewLine)
 				{
 					lineWidth = 0f;
+					if (word.Text == null)
+					{
+						lineBuilder.Append(word.Character);
+					}
+					else
+					{
+						lineBuilder.Append(word.Text);
+					}
 				}
 				else if (word.Text == null)
 				{
