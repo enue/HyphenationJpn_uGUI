@@ -125,6 +125,10 @@ namespace HyphenationJpns
 				else if (supportRichText)
 				{
 					float textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.Text, supportRichText);
+					if (word.StartsWithNewLine)
+					{
+						lineWidth = 0f;
+					}
 					if (lineWidth + textWidth > rectWidth)
 					{
 						if (lineWidth != 0f)
@@ -141,56 +145,56 @@ namespace HyphenationJpns
 				}
 				else
 				{
-					var processingIndex = 0;
-					var enableForceNewLine = false;
-					for(int i=0; i<word.Text.Length; ++i)
+					var textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.Text, supportRichText);
+					if (lineWidth + textWidth <= rectWidth)
 					{
-						var character = word.Text[i];
-						if (character == '\n' || character == '\r')
+						if (word.StartsWithNewLine)
 						{
-							for (int j = processingIndex; j <= i; ++j)
-							{
-								lineBuilder.Append(word.Text[j]);
-							}
-							processingIndex = i+1;
 							lineWidth = 0f;
 						}
-						else
+						lineWidth += textWidth;
+						lineBuilder.Append(word.Text);
+					}
+					else if (textWidth <= rectWidth)
+					{
+						if (word.StartsWithNewLine)
 						{
-							var characterWidth = GetCharacterWidth(font, fontSize, fontStyle, character);
-							if (lineWidth == 0f)
-							{
-								lineWidth = characterWidth;
-							}
-							else if (lineWidth + characterWidth > rectWidth)
+							lineWidth = 0f;
+						}
+						if (lineWidth != 0f)
+						{
+							if (!word.StartsWithNewLine)
 							{
 								lineBuilder.Append(Environment.NewLine);
-								lineWidth = 0f;
-								for (int j = processingIndex; j <= i; ++j)
-								{
-									lineBuilder.Append(word.Text[j]);
-									lineWidth += GetCharacterWidth(font, fontSize, fontStyle, word.Text[j]);
-								}
-								processingIndex = i + 1;
-								enableForceNewLine = true;
 							}
-							else if (enableForceNewLine)
+							lineWidth = 0f;
+						}
+						lineWidth += textWidth;
+						lineBuilder.Append(word.Text);
+					}
+					else
+					{
+						// wordの横幅がrectの横幅を超える場合は禁則を無視して改行するしかない
+						foreach(var character in word.Text)
+						{
+							if (character == '\n' || character == '\r')
 							{
 								lineBuilder.Append(character);
-								lineWidth += characterWidth;
-								processingIndex = i + 1;
+								lineWidth = 0f;
 							}
 							else
 							{
+								var characterWidth = GetCharacterWidth(font, fontSize, fontStyle, character);
+								if (lineWidth > 0f && lineWidth + characterWidth > rectWidth)
+								{
+									lineBuilder.Append(Environment.NewLine);
+									lineWidth = 0f;
+								}
+								lineBuilder.Append(character);
 								lineWidth += characterWidth;
 							}
 						}
 					}
-					for (int i = processingIndex; i < word.Text.Length; ++i)
-					{
-						lineBuilder.Append(word.Text[i]);
-					}
-
 				}
 			}
 
