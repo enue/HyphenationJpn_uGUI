@@ -119,13 +119,10 @@ namespace HyphenationJpns
 				else if (word.Text == null)
 				{
 					float textWidth = GetCharacterWidth(font, fontSize, fontStyle, word.Character);
-					if (lineWidth + textWidth > rectWidth)
+					if (lineWidth != 0f && lineWidth + textWidth > rectWidth)
 					{
-						if (lineWidth != 0f)
-						{
-							lineBuilder.Append(Environment.NewLine);
-							lineWidth = 0f;
-						}
+						lineBuilder.Append(Environment.NewLine);
+						lineWidth = 0f;
 					}
 					lineWidth += textWidth;
 					lineBuilder.Append(word.Character);
@@ -137,16 +134,10 @@ namespace HyphenationJpns
 					{
 						lineWidth = 0f;
 					}
-					if (lineWidth + textWidth > rectWidth)
+					else if (lineWidth != 0f && lineWidth + textWidth > rectWidth)
 					{
-						if (lineWidth != 0f)
-						{
-							if (!word.StartsWithNewLine)
-							{
-								lineBuilder.Append(Environment.NewLine);
-								lineWidth = 0f;
-							}
-						}
+						lineBuilder.Append(Environment.NewLine);
+						lineWidth = 0f;
 					}
 					lineWidth += textWidth;
 					lineBuilder.Append(word.Text);
@@ -169,12 +160,9 @@ namespace HyphenationJpns
 						{
 							lineWidth = 0f;
 						}
-						if (lineWidth != 0f)
+						else if (lineWidth != 0f)
 						{
-							if (!word.StartsWithNewLine)
-							{
-								lineBuilder.Append(Environment.NewLine);
-							}
+							lineBuilder.Append(Environment.NewLine);
 							lineWidth = 0f;
 						}
 						lineWidth += textWidth;
