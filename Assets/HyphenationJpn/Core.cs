@@ -21,6 +21,18 @@ namespace HyphenationJpns
 				Character = character;
 			}
 
+			public int Length
+			{
+				get
+				{
+					if (Text == null)
+					{
+						return 1;
+					}
+					return Text.Length;
+				}
+			}
+
 			public bool StartsWithNewLine
 			{
 				get
@@ -91,15 +103,30 @@ namespace HyphenationJpns
 
 		public static string GetFormattedText(float rectWidth, Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
 		{
+			var newLinePositions = GetNewLinePositions(rectWidth, font, fontSize, fontStyle, message, supportRichText);
+
+			newLinePositions.Sort();
+			for (int i = 0; i < newLinePositions.Count; ++i)
+			{
+				var position = newLinePositions[newLinePositions.Count - 1 - i];
+				message = message.Insert(position, "\n");
+			}
+			return message;
+		}
+
+		public static List<int> GetNewLinePositions(float rectWidth, Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
+		{
+			var result = new List<int>();
+
 			if (string.IsNullOrEmpty(message))
 			{
-				return string.Empty;
+				return result;
 			}
 
 			font.RequestCharactersInTexture(message, fontSize, fontStyle);
 
 			// work
-			StringBuilder lineBuilder = new StringBuilder();
+			var currentPosition = 0;
 
 			float lineWidth = 0f;
 			foreach (var word in GetWordList(message))
@@ -107,25 +134,18 @@ namespace HyphenationJpns
 				if (word.EndsWithNewLine)
 				{
 					lineWidth = 0f;
-					if (word.Text == null)
-					{
-						lineBuilder.Append(word.Character);
-					}
-					else
-					{
-						lineBuilder.Append(word.Text);
-					}
+					currentPosition += word.Length;
 				}
 				else if (word.Text == null)
 				{
 					float textWidth = GetCharacterWidth(font, fontSize, fontStyle, word.Character);
 					if (lineWidth != 0f && lineWidth + textWidth > rectWidth)
 					{
-						lineBuilder.Append('\n');
+						result.Add(currentPosition);
 						lineWidth = 0f;
 					}
 					lineWidth += textWidth;
-					lineBuilder.Append(word.Character);
+					currentPosition += word.Length;
 				}
 				else if (supportRichText)
 				{
@@ -136,11 +156,11 @@ namespace HyphenationJpns
 					}
 					else if (lineWidth != 0f && lineWidth + textWidth > rectWidth)
 					{
-						lineBuilder.Append('\n');
+						result.Add(currentPosition);
 						lineWidth = 0f;
 					}
 					lineWidth += textWidth;
-					lineBuilder.Append(word.Text);
+					currentPosition += word.Length;
 				}
 				else
 				{
@@ -152,7 +172,7 @@ namespace HyphenationJpns
 							lineWidth = 0f;
 						}
 						lineWidth += textWidth;
-						lineBuilder.Append(word.Text);
+						currentPosition += word.Length;
 					}
 					else if (textWidth <= rectWidth)
 					{
@@ -162,11 +182,11 @@ namespace HyphenationJpns
 						}
 						else if (lineWidth != 0f)
 						{
-							lineBuilder.Append('\n');
+							result.Add(currentPosition);
 							lineWidth = 0f;
 						}
 						lineWidth += textWidth;
-						lineBuilder.Append(word.Text);
+						currentPosition += word.Length;
 					}
 					else
 					{
@@ -175,7 +195,7 @@ namespace HyphenationJpns
 						{
 							if (character == '\n')
 							{
-								lineBuilder.Append(character);
+								++currentPosition;
 								lineWidth = 0f;
 							}
 							else
@@ -183,10 +203,10 @@ namespace HyphenationJpns
 								var characterWidth = GetCharacterWidth(font, fontSize, fontStyle, character);
 								if (lineWidth > 0f && lineWidth + characterWidth > rectWidth)
 								{
-									lineBuilder.Append('\n');
+									result.Add(currentPosition);
 									lineWidth = 0f;
 								}
-								lineBuilder.Append(character);
+								++currentPosition;
 								lineWidth += characterWidth;
 							}
 						}
@@ -194,7 +214,7 @@ namespace HyphenationJpns
 				}
 			}
 
-			return lineBuilder.ToString();
+			return result;
 		}
 
 		static private IEnumerable<Word> GetWordList(string tmpText)
