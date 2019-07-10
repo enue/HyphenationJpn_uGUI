@@ -27,14 +27,14 @@ namespace HyphenationJpns
 				{
 					if (Text == null)
 					{
-						return Character == '\n' || Character == '\r';
+						return Character == '\n';
 					}
 					if (Text.Length == 0)
 					{
 						return false;
 					}
 					var start = Text[0];
-					return start == '\n' || start == '\r';
+					return start == '\n';
 				}
 			}
 
@@ -44,14 +44,14 @@ namespace HyphenationJpns
 				{
 					if (Text == null)
 					{
-						return Character == '\n' || Character == '\r';
+						return Character == '\n';
 					}
 					if (Text.Length == 0)
 					{
 						return false;
 					}
 					var end = Text[Text.Length - 1];
-					return end == '\n' || end == '\r';
+					return end == '\n';
 				}
 			}
 		}
@@ -65,7 +65,7 @@ namespace HyphenationJpns
 			float lineWidth = 0f;
 			foreach (var character in message)
 			{
-				if (character == '\r' || character == '\n')
+				if (character == '\n')
 				{
 					lineWidth = 0f;
 				}
@@ -121,7 +121,7 @@ namespace HyphenationJpns
 					float textWidth = GetCharacterWidth(font, fontSize, fontStyle, word.Character);
 					if (lineWidth != 0f && lineWidth + textWidth > rectWidth)
 					{
-						lineBuilder.Append(Environment.NewLine);
+						lineBuilder.Append('\n');
 						lineWidth = 0f;
 					}
 					lineWidth += textWidth;
@@ -136,7 +136,7 @@ namespace HyphenationJpns
 					}
 					else if (lineWidth != 0f && lineWidth + textWidth > rectWidth)
 					{
-						lineBuilder.Append(Environment.NewLine);
+						lineBuilder.Append('\n');
 						lineWidth = 0f;
 					}
 					lineWidth += textWidth;
@@ -162,7 +162,7 @@ namespace HyphenationJpns
 						}
 						else if (lineWidth != 0f)
 						{
-							lineBuilder.Append(Environment.NewLine);
+							lineBuilder.Append('\n');
 							lineWidth = 0f;
 						}
 						lineWidth += textWidth;
@@ -173,7 +173,7 @@ namespace HyphenationJpns
 						// wordの横幅がrectの横幅を超える場合は禁則を無視して改行するしかない
 						foreach(var character in word.Text)
 						{
-							if (character == '\n' || character == '\r')
+							if (character == '\n')
 							{
 								lineBuilder.Append(character);
 								lineWidth = 0f;
@@ -183,7 +183,7 @@ namespace HyphenationJpns
 								var characterWidth = GetCharacterWidth(font, fontSize, fontStyle, character);
 								if (lineWidth > 0f && lineWidth + characterWidth > rectWidth)
 								{
-									lineBuilder.Append(Environment.NewLine);
+									lineBuilder.Append('\n');
 									lineWidth = 0f;
 								}
 								lineBuilder.Append(character);
@@ -206,7 +206,7 @@ namespace HyphenationJpns
 			{
 				char currentCharacter = tmpText[characterCount];
 				char nextCharacter = (characterCount < tmpText.Length - 1) ? tmpText[characterCount + 1] : emptyChar;
-				char preCharacter = (characterCount > 0) ? preCharacter = tmpText[characterCount - 1] : emptyChar;
+				char preCharacter = (characterCount > 0) ? tmpText[characterCount - 1] : emptyChar;
 
 				line.Append(currentCharacter);
 
