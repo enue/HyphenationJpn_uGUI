@@ -68,6 +68,36 @@ namespace HyphenationJpns
 			}
 		}
 
+		public static float GetTextWidth(string message, Font font, int fontSize, FontStyle fontStyle, bool richText, bool updateTexture = true)
+		{
+			if (richText)
+			{
+				message = RITCH_TEXT_REPLACE.Replace(message, string.Empty);
+			}
+
+			if (updateTexture)
+			{
+				font.RequestCharactersInTexture(message, fontSize, fontStyle);
+			}
+
+			var lineWidth = 0f;
+			var maxWidth = 0f;
+			foreach (var it in message)
+			{
+				if (it == '\n')
+				{
+					maxWidth = Mathf.Max(maxWidth, lineWidth);
+					lineWidth = 0f;
+				}
+				else
+				{
+					lineWidth += GetCharacterWidth(font, fontSize, fontStyle, it);
+				}
+			}
+
+			return Mathf.Max(maxWidth, lineWidth);
+		}
+
 		static float GetLastLineWidth(Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
 		{
 			if (supportRichText)
