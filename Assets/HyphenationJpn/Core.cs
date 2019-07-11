@@ -144,7 +144,13 @@ namespace HyphenationJpns
 			return message;
 		}
 
-		public static List<int> GetNewLinePositions(float rectWidth, Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
+		public static List<int> GetNewLinePositions(float rectWidth,
+			Font font,
+			int fontSize,
+			FontStyle fontStyle,
+			string message,
+			bool supportRichText,
+			RangeInt[] disallowRanges = null)
 		{
 			var result = new List<int>();
 
@@ -159,7 +165,7 @@ namespace HyphenationJpns
 			var currentPosition = 0;
 
 			float lineWidth = 0f;
-			foreach (var word in GetWordList(message))
+			foreach (var word in GetWordList(message, disallowRanges))
 			{
 				if (word.EndsWithNewLine)
 				{
@@ -221,7 +227,7 @@ namespace HyphenationJpns
 					else
 					{
 						// wordの横幅がrectの横幅を超える場合は禁則を無視して改行するしかない
-						foreach(var character in word.Text)
+						foreach (var character in word.Text)
 						{
 							if (character == '\n')
 							{
@@ -247,37 +253,70 @@ namespace HyphenationJpns
 			return result;
 		}
 
-		static private IEnumerable<Word> GetWordList(string tmpText)
+		static IEnumerable<Word> GetWordList(string tmpText, RangeInt[] unsplittableRanges)
 		{
-			StringBuilder line = new StringBuilder();
-			char emptyChar = new char();
+			var line = new StringBuilder();
+			var emptyChar = new char();
 
-			for (int characterCount = 0; characterCount < tmpText.Length; characterCount++)
+			for (int characterIndex = 0; characterIndex < tmpText.Length;)
 			{
-				char currentCharacter = tmpText[characterCount];
-				char nextCharacter = (characterCount < tmpText.Length - 1) ? tmpText[characterCount + 1] : emptyChar;
-				char preCharacter = (characterCount > 0) ? tmpText[characterCount - 1] : emptyChar;
+				var firstIndex = characterIndex;
+				var lastIndex = characterIndex;
 
-				line.Append(currentCharacter);
+				if (unsplittableRanges != null)
+				{
+					foreach (var it in unsplittableRanges)
+					{
+						if (it.start == firstIndex)
+						{
+							lastIndex = Mathf.Min(it.end - 1, tmpText.Length - 1);
+							break;
+						}
+					}
+				}
 
-				if (((IsLatin(currentCharacter) && IsLatin(preCharacter)) && (IsLatin(currentCharacter) && !IsLatin(preCharacter))) ||
-					(!IsLatin(currentCharacter) && CHECK_HYP_BACK(preCharacter)) ||
-					(!IsLatin(nextCharacter) && !CHECK_HYP_FRONT(nextCharacter) && !CHECK_HYP_BACK(currentCharacter)) ||
-					(characterCount == tmpText.Length - 1))
+				var firstCharacter = tmpText[firstIndex];
+				var lastCharacter = tmpText[lastIndex];
+				char nextCharacter = (lastIndex < tmpText.Length - 1) ? tmpText[lastIndex + 1] : emptyChar;
+				char preCharacter = (firstIndex > 0) ? tmpText[firstIndex - 1] : emptyChar;
+
+				characterIndex = lastIndex + 1;
+
+				if (firstIndex == lastIndex)
+				{
+					// 改行コード単品は即処理
+					if ((firstCharacter == '\n') && line.Length == 0)
+					{
+						yield return new Word(text: null, character: firstCharacter);
+						continue;
+					}
+
+					line.Append(firstCharacter);
+				}
+				else
+				{
+					// unsplittableRanges指定がある場合はまとめて処理する
+					line.Append(tmpText, firstIndex, lastIndex - firstIndex + 1);
+				}
+
+				if (((IsLatin(firstCharacter) && IsLatin(preCharacter)) && (IsLatin(firstCharacter) && !IsLatin(preCharacter)))
+					|| (!IsLatin(firstCharacter) && CHECK_HYP_BACK(preCharacter))
+					|| (!IsLatin(nextCharacter) && !CHECK_HYP_FRONT(nextCharacter) && !CHECK_HYP_BACK(lastCharacter))
+					|| (lastIndex == tmpText.Length - 1))
 				{
 					if (line.Length == 1)
 					{
-						yield return new Word(null, currentCharacter);
+						yield return new Word(null, character: firstCharacter);
 					}
 					else
 					{
-						yield return new Word(line.ToString(), default);
+						yield return new Word(line.ToString(), character: default);
 					}
 					line.Length = 0;
-					continue;
 				}
 			}
 		}
+
 		// static
 		private static readonly Regex RITCH_TEXT_REPLACE = new Regex(
 			"(\\<color=.*?\\>|</color>|" +
