@@ -10,64 +10,6 @@ namespace HyphenationJpns
 {
 	public static class Core
 	{
-		struct Word
-		{
-			public string Text { get; }
-			public char Character { get; }
-
-			public Word(string text, char character)
-			{
-				Text = text;
-				Character = character;
-			}
-
-			public int Length
-			{
-				get
-				{
-					if (Text == null)
-					{
-						return 1;
-					}
-					return Text.Length;
-				}
-			}
-
-			public bool StartsWithNewLine
-			{
-				get
-				{
-					if (Text == null)
-					{
-						return Character == '\n';
-					}
-					if (Text.Length == 0)
-					{
-						return false;
-					}
-					var start = Text[0];
-					return start == '\n';
-				}
-			}
-
-			public bool EndsWithNewLine
-			{
-				get
-				{
-					if (Text == null)
-					{
-						return Character == '\n';
-					}
-					if (Text.Length == 0)
-					{
-						return false;
-					}
-					var end = Text[Text.Length - 1];
-					return end == '\n';
-				}
-			}
-		}
-
 		public static float GetTextWidth(string message, Font font, int fontSize, FontStyle fontStyle, bool richText, bool updateTexture = true)
 		{
 			if (richText)
@@ -119,6 +61,24 @@ namespace HyphenationJpns
 			return lineWidth;
 		}
 
+		static float GetLastLineWidth(Font font, int fontSize, FontStyle fontStyle, StringBuilder message)
+		{
+			float lineWidth = 0f;
+			for (int i = 0; i < message.Length; ++i)
+			{
+				var character = message[i];
+				if (character == '\n')
+				{
+					lineWidth = 0f;
+				}
+				else
+				{
+					lineWidth += GetCharacterWidth(font, fontSize, fontStyle, character);
+				}
+			}
+			return lineWidth;
+		}
+
 		static float GetCharacterWidth(Font font, int fontSize, FontStyle fontStyle, char character)
 		{
 			var foundInfo = font.GetCharacterInfo(character, out var info, fontSize, fontStyle);
@@ -135,11 +95,15 @@ namespace HyphenationJpns
 		{
 			var newLinePositions = GetNewLinePositions(rectWidth, font, fontSize, fontStyle, message, supportRichText);
 
-			newLinePositions.Sort();
-			for (int i = 0; i < newLinePositions.Count; ++i)
+			if (newLinePositions.Count > 0)
 			{
-				var position = newLinePositions[newLinePositions.Count - 1 - i];
-				message = message.Insert(position, "\n");
+				var builder = new StringBuilder(message, message.Length + newLinePositions.Count);
+				for (int i = 0; i < newLinePositions.Count; ++i)
+				{
+					var position = newLinePositions[i] + i;
+					builder.Insert(position, "\n");
+				}
+				message = builder.ToString();
 			}
 			return message;
 		}
@@ -167,14 +131,14 @@ namespace HyphenationJpns
 			float lineWidth = 0f;
 			foreach (var word in GetWordList(message, disallowRanges))
 			{
-				if (word.EndsWithNewLine)
+				if (word[word.Length - 1] == '\n')
 				{
 					lineWidth = 0f;
 					currentPosition += word.Length;
 				}
-				else if (word.Text == null)
+				else if (word.Length == 1)
 				{
-					float textWidth = GetCharacterWidth(font, fontSize, fontStyle, word.Character);
+					float textWidth = GetCharacterWidth(font, fontSize, fontStyle, word[0]);
 					if (lineWidth != 0f && lineWidth + textWidth > rectWidth)
 					{
 						result.Add(currentPosition);
@@ -185,8 +149,8 @@ namespace HyphenationJpns
 				}
 				else if (supportRichText)
 				{
-					float textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.Text, supportRichText);
-					if (word.StartsWithNewLine)
+					float textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.ToString(), supportRichText);
+					if (word[0] == '\n')
 					{
 						lineWidth = 0f;
 					}
@@ -200,10 +164,10 @@ namespace HyphenationJpns
 				}
 				else
 				{
-					var textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.Text, supportRichText);
+					var textWidth = GetLastLineWidth(font, fontSize, fontStyle, word);
 					if (lineWidth + textWidth <= rectWidth)
 					{
-						if (word.StartsWithNewLine)
+						if (word[0] == '\n')
 						{
 							lineWidth = 0f;
 						}
@@ -212,7 +176,7 @@ namespace HyphenationJpns
 					}
 					else if (textWidth <= rectWidth)
 					{
-						if (word.StartsWithNewLine)
+						if (word[0] == '\n')
 						{
 							lineWidth = 0f;
 						}
@@ -227,8 +191,9 @@ namespace HyphenationJpns
 					else
 					{
 						// wordの横幅がrectの横幅を超える場合は禁則を無視して改行するしかない
-						foreach (var character in word.Text)
+						for (int i = 0; i < word.Length; ++i)
 						{
+							var character = word[i];
 							if (character == '\n')
 							{
 								++currentPosition;
@@ -253,9 +218,9 @@ namespace HyphenationJpns
 			return result;
 		}
 
-		static IEnumerable<Word> GetWordList(string tmpText, RangeInt[] unsplittableRanges)
+		static IEnumerable<StringBuilder> GetWordList(string tmpText, RangeInt[] unsplittableRanges)
 		{
-			var line = new StringBuilder();
+			var word = new StringBuilder();
 			var emptyChar = new char();
 
 			for (int characterIndex = 0; characterIndex < tmpText.Length;)
@@ -285,35 +250,33 @@ namespace HyphenationJpns
 				if (firstIndex == lastIndex)
 				{
 					// 改行コード単品は即処理
-					if ((firstCharacter == '\n') && line.Length == 0)
+					if ((firstCharacter == '\n') && word.Length == 0)
 					{
-						yield return new Word(text: null, character: firstCharacter);
+						word.Append(firstCharacter);
+						yield return word;
+						word.Length = 0;
 						continue;
 					}
 
-					line.Append(firstCharacter);
+					word.Append(firstCharacter);
 				}
 				else
 				{
 					// unsplittableRanges指定がある場合はまとめて処理する
-					line.Append(tmpText, firstIndex, lastIndex - firstIndex + 1);
+					word.Append(tmpText, firstIndex, lastIndex - firstIndex + 1);
 				}
 
 				if (((IsLatin(firstCharacter) && IsLatin(preCharacter)) && (IsLatin(firstCharacter) && !IsLatin(preCharacter)))
 					|| (!IsLatin(firstCharacter) && CHECK_HYP_BACK(preCharacter))
-					|| (!IsLatin(nextCharacter) && !CHECK_HYP_FRONT(nextCharacter) && !CHECK_HYP_BACK(lastCharacter))
-					|| (lastIndex == tmpText.Length - 1))
+					|| (!IsLatin(nextCharacter) && !CHECK_HYP_FRONT(nextCharacter) && !CHECK_HYP_BACK(lastCharacter)))
 				{
-					if (line.Length == 1)
-					{
-						yield return new Word(null, character: firstCharacter);
-					}
-					else
-					{
-						yield return new Word(line.ToString(), character: default);
-					}
-					line.Length = 0;
+					yield return word;
+					word.Length = 0;
 				}
+			}
+			if (word.Length > 0)
+			{
+				yield return word;
 			}
 		}
 
