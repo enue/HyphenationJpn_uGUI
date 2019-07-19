@@ -8,9 +8,44 @@ using UnityEngine.UI;
 
 namespace HyphenationJpns
 {
+	public class CharacterWidthCache
+	{
+		public Dictionary<char, float> CharacterWidths { get; } = new Dictionary<char, float>();
+		public Font Font { get; private set; }
+		public int FontSize { get; private set; }
+		public FontStyle FontStyle { get; private set; }
+
+		public float Get(char character, Font font, int fontSize, FontStyle fontStyle)
+		{
+			if (Font == font
+				&& FontSize == fontSize
+				&& FontStyle == fontStyle)
+			{
+				if (CharacterWidths.TryGetValue(character, out var result))
+				{
+					return result;
+				}
+			}
+			else
+			{
+				Font = font;
+				FontSize = fontSize;
+				FontStyle = fontStyle;
+				CharacterWidths.Clear();
+			}
+			var foundInfo = Font.GetCharacterInfo(character, out var info, FontSize, FontStyle);
+			UnityEngine.Assertions.Assert.IsTrue(foundInfo, "not found character info : " + character);
+
+			CharacterWidths.Add(character, info.advance);
+			return info.advance;
+		}
+	}
+
 	public static class Core
 	{
-		public static float GetTextWidth(string message, Font font, int fontSize, FontStyle fontStyle, bool richText, bool updateTexture = true)
+		public static float GetTextWidth(string message, Font font, int fontSize, FontStyle fontStyle, bool richText,
+			bool updateTexture = true,
+			CharacterWidthCache cache = null)
 		{
 			if (richText)
 			{
@@ -33,14 +68,15 @@ namespace HyphenationJpns
 				}
 				else
 				{
-					lineWidth += GetCharacterWidth(font, fontSize, fontStyle, it);
+					lineWidth += GetCharacterWidth(font, fontSize, fontStyle, it, cache);
 				}
 			}
 
 			return Mathf.Max(maxWidth, lineWidth);
 		}
 
-		static float GetLastLineWidth(Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
+		static float GetLastLineWidth(Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText,
+			CharacterWidthCache cache)
 		{
 			if (supportRichText)
 			{
@@ -55,13 +91,14 @@ namespace HyphenationJpns
 				}
 				else
 				{
-					lineWidth += GetCharacterWidth(font, fontSize, fontStyle, character);
+					lineWidth += GetCharacterWidth(font, fontSize, fontStyle, character, cache);
 				}
 			}
 			return lineWidth;
 		}
 
-		static float GetLastLineWidth(Font font, int fontSize, FontStyle fontStyle, StringBuilder message)
+		static float GetLastLineWidth(Font font, int fontSize, FontStyle fontStyle, StringBuilder message,
+			CharacterWidthCache cache)
 		{
 			float lineWidth = 0f;
 			for (int i = 0; i < message.Length; ++i)
@@ -73,28 +110,36 @@ namespace HyphenationJpns
 				}
 				else
 				{
-					lineWidth += GetCharacterWidth(font, fontSize, fontStyle, character);
+					lineWidth += GetCharacterWidth(font, fontSize, fontStyle, character, cache);
 				}
 			}
 			return lineWidth;
 		}
 
-		static float GetCharacterWidth(Font font, int fontSize, FontStyle fontStyle, char character)
+		static float GetCharacterWidth(Font font, int fontSize, FontStyle fontStyle, char character,
+			CharacterWidthCache cache)
 		{
+			if (cache != null)
+			{
+				return cache.Get(character, font, fontSize, fontStyle);
+			}
+
 			var foundInfo = font.GetCharacterInfo(character, out var info, fontSize, fontStyle);
 			UnityEngine.Assertions.Assert.IsTrue(foundInfo, "not found character info : " + character);
 			return info.advance;
 		}
 
-		public static string GetFormattedText(Text text, string message)
+		public static string GetFormattedText(Text text, string message, CharacterWidthCache cache = null)
 		{
-			return GetFormattedText(text.rectTransform.rect.width, text.font, text.fontSize, text.fontStyle, message, text.supportRichText);
+			return GetFormattedText(text.rectTransform.rect.width, text.font, text.fontSize, text.fontStyle, message, text.supportRichText, cache);
 		}
 
-		public static string GetFormattedText(float rectWidth, Font font, int fontSize, FontStyle fontStyle, string message, bool supportRichText)
+		public static string GetFormattedText(float rectWidth, Font font, int fontSize, FontStyle fontStyle, string message,
+			bool supportRichText,
+			CharacterWidthCache cache = null)
 		{
-			var newLinePositions = GetNewLinePositions(rectWidth, font, fontSize, fontStyle, message, supportRichText);
-
+			var newLinePositions = GetNewLinePositions(rectWidth, font, fontSize, fontStyle, message, supportRichText, null, cache);
+			
 			if (newLinePositions.Count > 0)
 			{
 				var builder = new StringBuilder(message, message.Length + newLinePositions.Count);
@@ -114,7 +159,8 @@ namespace HyphenationJpns
 			FontStyle fontStyle,
 			string message,
 			bool supportRichText,
-			RangeInt[] disallowRanges = null)
+			RangeInt[] disallowRanges = null,
+			CharacterWidthCache characterWidthsCache = null)
 		{
 			var result = new List<int>();
 
@@ -138,7 +184,7 @@ namespace HyphenationJpns
 				}
 				else if (word.Length == 1)
 				{
-					float textWidth = GetCharacterWidth(font, fontSize, fontStyle, word[0]);
+					float textWidth = GetCharacterWidth(font, fontSize, fontStyle, word[0], characterWidthsCache);
 					if (lineWidth != 0f && lineWidth + textWidth > rectWidth)
 					{
 						result.Add(currentPosition);
@@ -149,7 +195,7 @@ namespace HyphenationJpns
 				}
 				else if (supportRichText)
 				{
-					float textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.ToString(), supportRichText);
+					float textWidth = GetLastLineWidth(font, fontSize, fontStyle, word.ToString(), supportRichText, characterWidthsCache);
 					if (word[0] == '\n')
 					{
 						lineWidth = 0f;
@@ -164,7 +210,7 @@ namespace HyphenationJpns
 				}
 				else
 				{
-					var textWidth = GetLastLineWidth(font, fontSize, fontStyle, word);
+					var textWidth = GetLastLineWidth(font, fontSize, fontStyle, word, characterWidthsCache);
 					if (lineWidth + textWidth <= rectWidth)
 					{
 						if (word[0] == '\n')
@@ -201,7 +247,7 @@ namespace HyphenationJpns
 							}
 							else
 							{
-								var characterWidth = GetCharacterWidth(font, fontSize, fontStyle, character);
+								var characterWidth = GetCharacterWidth(font, fontSize, fontStyle, character, characterWidthsCache);
 								if (lineWidth > 0f && lineWidth + characterWidth > rectWidth)
 								{
 									result.Add(currentPosition);
