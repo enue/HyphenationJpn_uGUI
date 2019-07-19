@@ -20,7 +20,7 @@ public class HyphenationJpn : UIBehaviour
 		}
 	}
 	private Text _text;
-	readonly HyphenationJpns.CharacterWidthCache cache = new HyphenationJpns.CharacterWidthCache();
+	readonly HyphenationJpns.Ruler ruler = new HyphenationJpns.Ruler();
 
 	protected override void OnRectTransformDimensionsChange ()
 	{
@@ -40,7 +40,7 @@ public class HyphenationJpn : UIBehaviour
 		_Text.horizontalOverflow = HorizontalWrapMode.Overflow;
 
 		// update Text
-		_Text.text = HyphenationJpns.Core.GetFormattedText(_Text, str, cache);
+		_Text.text = ruler.GetFormattedText(_Text, str);
 	}
 	
 	public void SetText(string str)
@@ -48,7 +48,6 @@ public class HyphenationJpn : UIBehaviour
 		text = str;
 		UpdateText(text);
 	}
-
 
 	// helper
 	public float textWidth{
